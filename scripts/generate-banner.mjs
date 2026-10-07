@@ -3,67 +3,100 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
 // Run: node scripts/generate-banner.mjs
-// The SVG is entirely deterministic: vector paths, gradients, and live text.
+// The SVG is entirely deterministic: an isometric block field sampled from a
+// shader-style interference pattern, a hovering block piece, and live text.
 const width = 1800;
 const height = 600;
-const palette = { cyan: '#28dcf2', blue: '#448cff', violet: '#a479ff', coral: '#ff9aab' };
+const background = '#060b16';
+const spectrum = ['#28dcf2', '#448cff', '#a479ff', '#ff9aab'];
 const output = fileURLToPath(new URL('../assets/banner.svg', import.meta.url));
-const number = value => value.toFixed(2);
 
-// Project a sinusoidal surface into the banner plane. Each constant-v slice
-// becomes one contour; changing the coefficients changes the whole sculpture.
-function surface(u, v) {
-  return {
-    x: 1295 + 455 * u + 85 * Math.sin(2.8 * v + 1.2 * u),
-    y: 310 + 180 * v + 110 * Math.sin(2.8 * u + 1.6 * v) + 45 * Math.cos(4 * v + u),
-  };
+// Board geometry: N×N columns, isometric half-tile W×H, UNIT px per level.
+// Integer constants keep every coordinate an integer.
+const N = 16;
+const W = 26;
+const H = 13;
+const UNIT = 12;
+const LEVELS = 9;
+const origin = { x: 1330, y: 150 };
+
+const hex = color => [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16));
+const mix = (a, b, t) => '#' + hex(a).map((c, i) => Math.round(c + (hex(b)[i] - c) * t).toString(16).padStart(2, '0')).join('');
+
+function spectrumAt(t) {
+  const scaled = t * (spectrum.length - 1);
+  const index = Math.min(Math.floor(scaled), spectrum.length - 2);
+  return mix(spectrum[index], spectrum[index + 1], scaled - index);
 }
 
-function contour(v) {
-  const points = Array.from({ length: 201 }, (_, i) => surface(-1.28 + i * 2.56 / 200, v));
-  return points.map((p, i) => `${i ? 'L' : 'M'}${number(p.x)},${number(p.y)}`).join(' ');
+// Two ripples interfering, like a fragment shader evaluated once per cell,
+// then quantised into stacked block levels 1..LEVELS.
+function level(i, j) {
+  if (i >= N || j >= N) return 0;
+  const u = (i + 0.5) / N * 2 - 1;
+  const v = (j + 0.5) / N * 2 - 1;
+  const a = Math.cos(7 * Math.hypot(u + 0.25, v - 0.35));
+  const b = Math.cos(9 * Math.hypot(u - 0.45, v + 0.3) - 1);
+  return 1 + Math.round((0.5 + 0.5 * (0.6 * a + 0.4 * b)) * (LEVELS - 1));
 }
 
-const curves = Array.from({ length: 65 }, (_, i) => {
-  const v = -1.35 + i * 2.7 / 64;
-  const emphasis = i % 8 === 0;
-  return `<path d="${contour(v)}" stroke-width="${emphasis ? 1.8 : 1.05}" opacity="${emphasis ? 0.94 : 0.58}"/>`;
+const point = (i, j, z) => `${origin.x + (i - j) * W},${origin.y + (i + j) * H - z * UNIT}`;
+const face = (fill, corners) => `<path fill="${fill}" d="M${corners.join('L')}Z"/>`;
+
+// One prism from height z down to the given floors: left face, right face, top.
+// Board columns pass the front neighbours' heights as floors, since anything
+// lower is hidden by those neighbours anyway.
+function prism(i, j, z, top, leftFloor, rightFloor) {
+  const faces = [];
+  if (z > leftFloor) {
+    faces.push(face(mix(top, background, 0.38), [point(i, j + 1, z), point(i + 1, j + 1, z), point(i + 1, j + 1, leftFloor), point(i, j + 1, leftFloor)]));
+  }
+  if (z > rightFloor) {
+    faces.push(face(mix(top, background, 0.6), [point(i + 1, j, z), point(i + 1, j + 1, z), point(i + 1, j + 1, rightFloor), point(i + 1, j, rightFloor)]));
+  }
+  faces.push(face(top, [point(i, j, z), point(i + 1, j, z), point(i + 1, j + 1, z), point(i, j + 1, z)]));
+  return faces.join('');
+}
+
+// Painter's order: back diagonals (small i + j) first.
+const byDepth = (p, q) => p[0] + p[1] - (q[0] + q[1]) || p[0] - q[0];
+const cells = Array.from({ length: N * N }, (_, k) => [Math.floor(k / N), k % N]).sort(byDepth);
+
+const board = cells.map(([i, j]) => {
+  const z = level(i, j);
+  return prism(i, j, z, spectrumAt((z - 1) / (LEVELS - 1)), level(i, j + 1), level(i + 1, j));
 }).join('\n');
 
-// A second family of quiet curves ties the sculpture to the left-hand grid.
-const lowerCurves = Array.from({ length: 13 }, (_, line) => {
-  const points = Array.from({ length: 121 }, (_, i) => {
-    const x = i * width / 120;
-    const y = 536 + line * 5 + 19 * Math.sin(x / 190 + line * 0.11) - 30 * Math.exp(-(((x - 1130) / 260) ** 2));
-    return `${i ? 'L' : 'M'}${number(x)},${number(y)}`;
-  }).join(' ');
-  return `<path d="${points}" opacity="${number(0.10 + line * 0.012)}"/>`;
-}).join('\n');
+// A T-piece hovering above the back of the board, about to drop.
+const hover = LEVELS + 6;
+const piece = [[2, 5], [3, 5], [4, 5], [3, 6]].sort(byDepth)
+  .map(([i, j]) => prism(i, j, hover, '#eef3ff', hover - 1, hover - 1)).join('\n');
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title description">
 <title id="title">Adel Terki — Creative coding. Practical tools.</title>
-<desc id="description">A code-built banner with a midnight-blue grid and a folded surface of cyan, violet, and coral mathematical contours.</desc>
+<desc id="description">A code-built banner: an isometric landscape of blocks whose heights follow a rippling shader pattern in cyan, violet, and coral, with a white T-shaped block piece hovering above it.</desc>
 <defs>
-  <linearGradient id="background" x2="1" y2="1"><stop stop-color="#040c17"/><stop offset="1" stop-color="#0d1023"/></linearGradient>
-  <linearGradient id="spectrum" gradientUnits="userSpaceOnUse" x1="860" y1="80" x2="1730" y2="550"><stop stop-color="${palette.cyan}"/><stop offset=".38" stop-color="${palette.blue}"/><stop offset=".72" stop-color="${palette.violet}"/><stop offset="1" stop-color="${palette.coral}"/></linearGradient>
-  <linearGradient id="fade"><stop offset=".40" stop-color="#000"/><stop offset=".57" stop-color="#fff"/></linearGradient>
-  <radialGradient id="halo"><stop stop-color="#26436d" stop-opacity=".35"/><stop offset="1" stop-color="#142344" stop-opacity="0"/></radialGradient>
-  <pattern id="grid" width="90" height="90" patternUnits="userSpaceOnUse"><path d="M90 0H0V90" fill="none" stroke="#2a5267" stroke-width=".8" opacity=".30"/><circle cx="0" cy="0" r="1.5" fill="#35d1ee" opacity=".35"/></pattern>
-  <mask id="artwork-fade"><rect width="1800" height="600" fill="url(#fade)"/></mask>
+  <linearGradient id="background" x2="1" y2="1"><stop stop-color="#050a15"/><stop offset="1" stop-color="#0c1024"/></linearGradient>
+  <radialGradient id="halo" cx="1330" cy="330" r="560" gradientUnits="userSpaceOnUse"><stop stop-color="#2a3f7a" stop-opacity=".45"/><stop offset="1" stop-color="#2a3f7a" stop-opacity="0"/></radialGradient>
+  <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="15" cy="15" r="1" fill="#5a7396" opacity=".22"/></pattern>
 </defs>
-<rect width="1800" height="600" fill="url(#background)"/>
-<rect width="1800" height="600" fill="url(#grid)"/>
-<ellipse cx="1320" cy="280" rx="550" ry="410" fill="url(#halo)"/>
-<g fill="none" stroke="url(#spectrum)" stroke-linecap="round" mask="url(#artwork-fade)">
-${curves}
+<rect width="${width}" height="${height}" fill="url(#background)"/>
+<rect width="${width}" height="${height}" fill="url(#dots)"/>
+<rect width="${width}" height="${height}" fill="url(#halo)"/>
+<ellipse cx="${origin.x}" cy="${origin.y + 2 * N * H - 30}" rx="${N * W}" ry="40" fill="#000" opacity=".35"/>
+<g stroke="${background}" stroke-width="1" stroke-linejoin="round">
+${board}
+${piece}
 </g>
-<g fill="none" stroke="url(#spectrum)" stroke-width="1">${lowerCurves}</g>
-<g font-family="Segoe UI, Arial, Helvetica, sans-serif">
-  <text x="100" y="190" fill="${palette.cyan}" font-family="Consolas, Menlo, monospace" font-size="24" letter-spacing="6">ANTELM-DEV</text>
-  <text x="94" y="297" fill="#f3f6fc" font-size="96" font-weight="700" letter-spacing="-3">Adel Terki</text>
-  <text x="100" y="354" fill="#b2c2d8" font-size="29" letter-spacing=".6">Creative coding. Practical tools.</text>
-  <path d="M100 415H144" stroke="${palette.cyan}" stroke-width="3"/>
-  <text x="159" y="421" fill="#7c91ab" font-family="Consolas, Menlo, monospace" font-size="15" letter-spacing="1.4">TYPESCRIPT / ELECTRON / REAL-TIME GRAPHICS</text>
+<g font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <path fill="${spectrum[0]}" d="M110 183L121 188.5L110 194L99 188.5Z"/>
+  <path fill="${mix(spectrum[0], background, 0.38)}" d="M99 188.5L110 194V206L99 200.5Z"/>
+  <path fill="${mix(spectrum[0], background, 0.6)}" d="M110 194L121 188.5V200.5L110 206Z"/>
+  <text x="136" y="203" fill="${spectrum[0]}" font-family="Consolas, Menlo, monospace" font-size="24" letter-spacing="6">ANTELM-DEV</text>
+  <text x="94" y="312" fill="#f3f6fc" font-size="104" font-weight="700" letter-spacing="-3">Adel Terki</text>
+  <text x="100" y="374" fill="#b8c6dc" font-size="34" letter-spacing=".4">Creative coding. Practical tools.</text>
+  <path d="M100 433H144" stroke="${spectrum[3]}" stroke-width="3"/>
+  <text x="160" y="440" fill="#7f93b0" font-family="Consolas, Menlo, monospace" font-size="18" letter-spacing="1.6">SHADERS / DEV TOOLS / 3D GAMES</text>
 </g>
 </svg>\n`;
 

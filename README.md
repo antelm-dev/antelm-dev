@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Adel Terki — creative coding and practical tools, illustrated with flowing cyan and violet shader contours" width="100%" />
+  <img src="assets/banner.svg" alt="Adel Terki — creative coding and practical tools, illustrated with a code-generated isometric block landscape and a hovering Tetris piece" width="100%" />
 </p>
 
 I build **web and desktop applications**, **developer tools**, and things that turn code into something you can see and play with.
@@ -19,10 +19,6 @@ My projects bring together TypeScript, Electron, and real-time graphics: a shade
 **A workspace for building, tuning, and collecting WebGL shaders.**
 
 Edit GLSL with live previews and compiler diagnostics, generate interactive controls, and keep shaders and presets in a portable library. Available on the web and as an Electron desktop app.
-
-<a href="https://github.com/antelm-dev/shadergrove">
-  <img src="assets/shadergrove-preview.jpg" alt="Shadergrove running a colorful Warp Tunnel shader, with the GLSL editor and interactive controls visible" width="100%" />
-</a>
 
 `Angular` · `NestJS` · `Electron` · `GLSL / WebGL`
 
