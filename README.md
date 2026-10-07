@@ -1,22 +1,32 @@
 <p align="center">
-  <img src="assets/banner-minimal.svg" alt="Adel Terki — Creative coding. Practical tools." width="100%" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-minimal.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="assets/banner-minimal-light.svg" />
+    <img src="assets/banner-minimal.svg" alt="Adel Terki — Creative coding. Practical tools." width="100%" />
+  </picture>
 </p>
 
 I build **web and desktop applications**, **developer tools**, and things that turn code into something you can see and play with.
 
-My projects bring together TypeScript, Electron, and real-time graphics: a shader workspace, a typed IPC library, and a 3D take on Tetris.
+Most of it is TypeScript, Electron, and real-time graphics: a shader workspace, a game engine with its own level editor, and a set of small, hardened building blocks for Electron apps.
 
 <p>
-  <a href="https://github.com/antelm-dev?tab=repositories">Explore my repositories ↗</a>
+  <a href="https://github.com/antelm-dev?tab=repositories">Repositories ↗</a>
   &nbsp;·&nbsp;
-  <a href="https://www.linkedin.com/in/adel-terki-6116861b5/">Connect on LinkedIn ↗</a>
+  <a href="https://adel-terki.fr">adel-terki.fr ↗</a>
+  &nbsp;·&nbsp;
+  <a href="https://www.linkedin.com/in/adel-terki-6116861b5/">LinkedIn ↗</a>
 </p>
 
-## What I'm building
+## Creative coding
 
 ### [Shadergrove](https://github.com/antelm-dev/shadergrove)
 
 **A workspace for building, tuning, and collecting WebGL shaders.**
+
+<a href="https://github.com/antelm-dev/shadergrove">
+  <img src="https://raw.githubusercontent.com/antelm-dev/shadergrove/master/docs/shadergrove-preview.jpg" alt="Shadergrove workspace: a live Warp Tunnel shader with generated controls for flight, lattice, palette, and optics" width="100%" />
+</a>
 
 Edit GLSL with live previews and compiler diagnostics, generate interactive controls, and keep shaders and presets in a portable library. Available on the web and as an Electron desktop app.
 
@@ -26,15 +36,17 @@ Edit GLSL with live previews and compiler diagnostics, generate interactive cont
 
 ---
 
-### [electron-ipc-module](https://github.com/antelm-dev/electron-ipc-module)
+### [mmx.ts](https://github.com/antelm-dev/mmx.ts) + [MMX Studio](https://github.com/antelm-dev/mmx-studio)
 
-**Declare once. Keep the bridge typed.**
+**A faithful port. A deterministic engine. A studio to build on it.**
 
-A modular Electron IPC library that generates a typed preload bridge from main-process handlers. Includes module lifecycle management and Rollup / Vite integration.
+mmx.ts is a TypeScript port of Mega Man X core gameplay on a deterministic engine. MMX Studio is the Electron + React level editor that sits on top: inspect, place, and edit every level entity, then play-test instantly with the real engine and Pixi renderer.
 
-`TypeScript` · `Electron` · `Developer tooling`
+`TypeScript` · `Pixi.js` · `Electron` · `React`
 
-[Explore the code →](https://github.com/antelm-dev/electron-ipc-module) &nbsp;·&nbsp; [Get the npm package →](https://www.npmjs.com/package/electron-ipc-module)
+[Explore the engine →](https://github.com/antelm-dev/mmx.ts) &nbsp;·&nbsp; [Explore the studio →](https://github.com/antelm-dev/mmx-studio)
+
+---
 
 ### [tetris.ts](https://github.com/antelm-dev/tetris.ts)
 
@@ -46,16 +58,15 @@ A 3D Tetris built with TypeScript and p5.js / WebGL. One game engine powers both
 
 [Explore the code →](https://github.com/antelm-dev/tetris.ts)
 
-## Tools I work with
+## Practical tools
 
-<p>
-  <img src="assets/typescript.svg" alt="TypeScript" height="32" />
-  <img src="assets/angular.svg" alt="Angular" height="32" />
-  <img src="assets/nodejs.svg" alt="Node.js" height="32" />
-  <img src="assets/electron.svg" alt="Electron" height="32" />
-  <img src="assets/webgl.svg" alt="GLSL / WebGL" height="32" />
-</p>
+Small, focused packages for building secure Electron apps. Each one works on its own; the template wires them together.
 
-## Say hello
+| Package | What it does | |
+| --- | --- | --- |
+| [electron-ipc-module](https://github.com/antelm-dev/electron-ipc-module) | Declare handlers in main, get a typed preload bridge generated for you. Module lifecycle, Rollup / Vite integration. | [![npm](https://img.shields.io/npm/v/electron-ipc-module?label=npm)](https://www.npmjs.com/package/electron-ipc-module) |
+| [electron-renderer-protocol](https://github.com/antelm-dev/electron-renderer-protocol) | A hardened custom protocol for serving the renderer bundle: path-traversal protection, CSP defaults, SPA fallback. | [![npm](https://img.shields.io/npm/v/electron-renderer-protocol?label=npm)](https://www.npmjs.com/package/electron-renderer-protocol) |
+| [vite-plugin-electron-run](https://github.com/antelm-dev/electron-run) | Electron dev loop for Vite: builds main and preload, restarts cleanly on change. | [![npm](https://img.shields.io/npm/v/vite-plugin-electron-run?label=npm)](https://www.npmjs.com/package/vite-plugin-electron-run) |
+| [electron-app-template](https://github.com/antelm-dev/electron-app-template) | Lightweight starter that combines the three above with electron-builder and Electron fuses. | [Use this template →](https://github.com/antelm-dev/electron-app-template/generate) |
 
-Interested in shader tools, Electron, or creative coding? [Let's connect on LinkedIn.](https://www.linkedin.com/in/adel-terki-6116861b5/)
+`TypeScript` · `Electron` · `Vite` · `Developer tooling`
