@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Adel Terki — creative coding and practical tools, illustrated with a code-generated isometric block landscape and a hovering Tetris piece" width="100%" />
+  <img src="assets/banner-minimal.svg" alt="Adel Terki — Creative coding. Practical tools." width="100%" />
 </p>
 
 I build **web and desktop applications**, **developer tools**, and things that turn code into something you can see and play with.
